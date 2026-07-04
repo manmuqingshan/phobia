@@ -71,7 +71,7 @@ There are a few videos about PMC on [YouTube](https://www.youtube.com/@romblv).
 	- High Frequency Injection (HFI) based on magnetic saliency.
 	- Discrete Hall sensors.
 	- AB quadrature incremental encoder (EABI).
-	- Absolute encoder on SPI interface (AS5047).
+	- Absolute encoder on SPI interface (AS5047, TLE5012).
 	- Analog Hall sensors and resolver decoder (**EXPERIMENTAL**).
 
 - Nested control loops:

@@ -544,10 +544,9 @@ void EPCAN_send_msg(CAN_msg_t *msg)
 
 			break;
 		}
-
-		/* Wait until one of the mailboxes becomes free.
-		 * */
-		taskYIELD();
+		else {
+			TIM_wait_ns(55000);
+		}
 	}
 	while (1);
 }

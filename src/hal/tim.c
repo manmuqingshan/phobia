@@ -41,23 +41,15 @@ void TIM_startup()
 
 void TIM_wait_ns(int ns)
 {
-	uint32_t		END, CNT;
+	uint32_t		ENT, TIM;
 
-	END = TIM7->CNT + (uint32_t) (ns)
-		* (CLOCK_TIM7_HZ / 1000000UL) / 1000UL;
+	ENT = TIM7->CNT;
+	TIM = (uint32_t) (ns) * (CLOCK_TIM7_HZ / 1000000UL) / 1000UL;
 
 	do {
-		CNT = TIM7->CNT;
-
-		if (CNT < END)
-			CNT += 65535U;
-
-		if (CNT >= END)
-			break;
-
 		__NOP();
 	}
-	while (1);
+	while ((uint32_t) ((TIM7->CNT - ENT) & 0xFFFFU) < TIM);
 }
 
 int TIM_get_CNT()

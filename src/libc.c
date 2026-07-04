@@ -238,7 +238,7 @@ void xputs_left(io_ops_t *io, const char *s, int len)
 	while (*s) {
 
 		io->putc(*s++);
-		len--;
+		--len;
 	}
 
 	for (; len > 0; --len) {
@@ -878,7 +878,7 @@ const char *stof(float *x, const char *s)
 
 uint32_t crc32u(const void *raw, size_t len)
 {
-	const uint8_t		*ip = (uint8_t *) raw;
+	const uint8_t		*ip = (const uint8_t *) raw;
 	const uint8_t		*ipend = ip + len;
 
 	uint32_t		crcsum = 0xFFFFFFFFU;

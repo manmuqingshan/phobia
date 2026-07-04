@@ -227,11 +227,11 @@ typedef struct {
 	float		m_dT;
 
 	int		dc_resolution;
+	int		dc_threshold;
 	float		dc_minimal;
 	float		dc_clearance;
 	float		dc_skip;
 	float		dc_bootstrap;
-	float		dc_threshold;
 
 	float		k_UMAX;
 	float		k_EMAX;
@@ -241,7 +241,6 @@ typedef struct {
 	int		ts_clearance;
 	int		ts_skip;
 	int		ts_bootstrap;
-	int		ts_threshold;
 	float		ts_inverted;
 
 	float		self_BST[3];

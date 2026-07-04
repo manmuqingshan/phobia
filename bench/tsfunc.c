@@ -750,8 +750,8 @@ ts_script_eabi(int knob_EABI)
 	}
 	else if (knob_EABI == PM_EABI_ABSOLUTE) {
 
-		m.eabi_ERES = 16384;
-		m.eabi_WRAP = 16384;
+		m.eabi_ERES = 32768;
+		m.eabi_WRAP = 32768;
 
 		pm.config_EABI_FRONTEND = PM_EABI_ABSOLUTE;
 	}

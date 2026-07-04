@@ -35,8 +35,12 @@ enum {
 	SPI_HIGH_RISING,
 
 	SPI_DMA			= 4,
-	SPI_DATA_8		= 8,
-	SPI_NSS_ON		= 32
+	SPI_DATA_BYTE		= 8,
+
+	SPI_NSS_ON_WORD		= 16,
+	SPI_NSS_ON_TRANSFER	= 32,
+
+	SPI_MOSI_OPEN_DRAIN	= 64
 };
 
 enum {
@@ -45,13 +49,14 @@ enum {
 	BUS_ID_SPI3
 };
 
-int SPI_is_halted(int bus);
+int SPI_halted(int bus);
 
 void SPI_startup(int bus, int freq_hz, int mode);
 void SPI_halt(int bus);
 
 uint16_t SPI_transfer(int bus, uint16_t txbuf);
-void SPI_transfer_dma(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len);
+void SPI_dma_transfer(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len);
+int SPI_dma_busy(int bus);
 
 #endif /* _H_SPI_ */
 

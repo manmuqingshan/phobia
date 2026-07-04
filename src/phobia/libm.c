@@ -101,8 +101,9 @@ void m_rsumf(float *sum, float *rem, float x)
 	/* Kahan compensated summation algorithm.
 	 * */
 
-	/* WARNING: Take care the compilation options do not include
-	 * associative math */
+	/* WARNING: Note that compilation options
+	 * must not include associative math.
+	 * */
 
 	y = x - *rem;
 	m = *sum + y;

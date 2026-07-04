@@ -20,7 +20,7 @@
 enum {
 	LINK_MODE_IDLE			= 0,
 	LINK_MODE_HWINFO,
-	LINK_MODE_GETTICK,
+	LINK_MODE_GETTIME,
 	LINK_MODE_DATA_GRAB,
 	LINK_MODE_EPCAN_MAP,
 	LINK_MODE_FLASH_MAP,
@@ -474,13 +474,13 @@ link_fetch_hwinfo(struct link_pmc *lp)
 }
 
 static void
-link_fetch_gettick(struct link_pmc *lp)
+link_fetch_gettime(struct link_pmc *lp)
 {
 	struct link_priv	*priv = lp->priv;
 	char			*sp = priv->lbuf;
 	int			time;
 
-	if (strcmp(lk_token(&sp), "TN") == 0) {
+	if (strcmp(lk_token(&sp), "TIME") == 0) {
 
 		lk_token(&sp);
 
@@ -566,6 +566,20 @@ link_fetch_flash_map(struct link_pmc *lp)
 			break;
 
 		++sp;
+	}
+}
+
+static void
+link_fetch_unable(struct link_pmc *lp)
+{
+	struct link_priv	*priv = lp->priv;
+	char			*lbuf = priv->lbuf;
+
+	if (strstr(lbuf, "Unable ") == lbuf) {
+
+		lp->unable_warning = 1;
+
+		sprintf(lp->command_grab, "%s\n", lbuf);
 	}
 }
 
@@ -732,7 +746,7 @@ int link_fetch(struct link_pmc *lp, int clock)
 	const	link_map[] = {
 
 		{ "ap_version",		LINK_MODE_HWINFO },
-		{ "ap_gettick",		LINK_MODE_GETTICK },
+		{ "ap_gettime",		LINK_MODE_GETTIME },
 		{ "ap_log_flush",	LINK_MODE_DATA_GRAB },
 		{ "ap_reboot",		LINK_MODE_COMMAND },
 		{ "ap_bootload",	LINK_MODE_COMMAND },
@@ -793,6 +807,8 @@ int link_fetch(struct link_pmc *lp, int clock)
 
 			case LINK_MODE_IDLE:
 
+				link_fetch_unable(lp);
+
 				if (rc_local == 0)
 					break;
 
@@ -832,8 +848,8 @@ int link_fetch(struct link_pmc *lp, int clock)
 				link_fetch_hwinfo(lp);
 				break;
 
-			case LINK_MODE_GETTICK:
-				link_fetch_gettick(lp);
+			case LINK_MODE_GETTIME:
+				link_fetch_gettime(lp);
 				break;
 
 			case LINK_MODE_DATA_GRAB:
@@ -882,7 +898,7 @@ int link_fetch(struct link_pmc *lp, int clock)
 
 			if (lp->keep + 1000 < lp->clock) {
 
-				sprintf(priv->lbuf, "ap_gettick" LINK_EOL);
+				sprintf(priv->lbuf, "ap_gettime" LINK_EOL);
 				serial_fputs(priv->fd, priv->lbuf);
 
 				lp->keep = lp->clock;
@@ -891,7 +907,7 @@ int link_fetch(struct link_pmc *lp, int clock)
 		else {
 			if (lp->keep + 5000 < lp->clock) {
 
-				sprintf(priv->lbuf, "ap_gettick" LINK_EOL);
+				sprintf(priv->lbuf, "ap_gettime" LINK_EOL);
 				serial_fputs(priv->fd, priv->lbuf);
 
 				lp->keep = lp->clock;

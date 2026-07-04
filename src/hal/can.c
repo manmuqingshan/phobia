@@ -239,11 +239,16 @@ int CAN_send_msg(const CAN_msg_t *msg)
 
 int CAN_errate()
 {
-	int		errate;
+	int		xESR, REC, TEC, errate;
 
-	errate =  ((CAN1->ESR & CAN_ESR_REC_Msk) >> (CAN_ESR_REC_Pos - 8U))
-		| ((CAN1->ESR & CAN_ESR_TEC_Msk) >> (CAN_ESR_TEC_Pos - 3U))
-		| ((CAN1->ESR & CAN_ESR_LEC_Msk) >> CAN_ESR_LEC_Pos);
+	xESR = CAN1->ESR;
+
+	REC = (xESR & CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos;
+	TEC = (xESR & CAN_ESR_TEC_Msk) >> CAN_ESR_TEC_Pos;
+
+	errate =  ((REC >> 4) << 12) | ((TEC >> 4) << 8)
+		| (xESR & CAN_ESR_LEC_Msk) | (xESR & CAN_ESR_BOFF_Msk)
+		| (xESR & CAN_ESR_EPVF_Msk) | (xESR & CAN_ESR_EWGF_Msk);
 
 	return errate;
 }

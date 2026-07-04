@@ -1269,9 +1269,9 @@ SH_DEF(ap_version)
 	printf("CRC32 %8x (%s)" EOL, ld_crc32, (rc != 0) ? "OK" : "FAULT");
 }
 
-SH_DEF(ap_gettick)
+SH_DEF(ap_gettime)
 {
-	printf("TN %i %i" EOL, log.boot_COUNT, xTaskGetTickCount());
+	printf("TIME %i %i" EOL, log.boot_COUNT, xTaskGetTickCount());
 }
 
 SH_DEF(ap_dbg_task)

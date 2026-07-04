@@ -22,7 +22,6 @@ void pm_lazy_build(pmc_t *pm)
 	pm->ts_skip = (int) (pm->dc_skip * 0.000001f
 			* pm->m_freq * (float) pm->dc_resolution);
 	pm->ts_bootstrap = PM_TSMS(pm, pm->dc_bootstrap);
-	pm->ts_threshold = (int) (pm->m_freq * pm->dc_threshold * 0.000001f + 0.5f);
 	pm->ts_inverted = 1.f / (float) pm->dc_resolution;
 
 	if (pm->const_lambda > M_EPSILON) {
@@ -85,11 +84,11 @@ void pm_lazy_build(pmc_t *pm)
 static void
 pm_auto_basic_default(pmc_t *pm)
 {
+	pm->dc_threshold = 5;			/*      */
 	pm->dc_minimal = 0.2f;			/* (us) */
 	pm->dc_clearance = 5.0f;		/* (us) */
 	pm->dc_skip = 2.0f;			/* (us) */
 	pm->dc_bootstrap = 100.f;		/* (ms) */
-	pm->dc_threshold = 200.f;		/* (us) */
 
 	pm->config_NOP = PM_NOP_THREE_PHASE;
 	pm->config_IFB = PM_IFB_ABC_INLINE;
@@ -3536,9 +3535,9 @@ void pm_feedback(pmc_t *pm, pmfb_t *fb)
 		}
 	}
 
-	if (unlikely(		   pm->fault_AT > pm->ts_threshold
-				|| pm->fault_BT > pm->ts_threshold
-				|| pm->fault_CT > pm->ts_threshold)) {
+	if (unlikely(		   pm->fault_AT > pm->dc_threshold
+				|| pm->fault_BT > pm->dc_threshold
+				|| pm->fault_CT > pm->dc_threshold)) {
 
 		pm->fsm_errno = PM_ERROR_INSTANT_OVERCURRENT;
 		pm->fsm_req = PM_STATE_HALT;
@@ -3627,7 +3626,7 @@ void pm_feedback(pmc_t *pm, pmfb_t *fb)
 		}
 	}
 
-	if (unlikely(pm->fault_UT > pm->ts_threshold)) {
+	if (unlikely(pm->fault_UT > pm->dc_threshold)) {
 
 		pm->fsm_errno = PM_ERROR_DC_LINK_OVERVOLTAGE;
 		pm->fsm_req = PM_STATE_HALT;

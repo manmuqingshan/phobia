@@ -9,6 +9,7 @@ typedef struct {
 
 	int		clock;
 	int		hold;
+	int		mode;
 
 	uint32_t	dmabuf[8] LD_DMA;
 }
@@ -16,7 +17,7 @@ priv_SPI_t;
 
 static priv_SPI_t		priv_SPI[3];
 
-int SPI_is_halted(int bus)
+int SPI_halted(int bus)
 {
 	return (priv_SPI[bus].SPI == (SPI_TypeDef *) 0) ? HAL_OK : HAL_FAULT;
 }
@@ -80,6 +81,7 @@ void SPI_startup(int bus, int freq, int mode)
 	}
 
 	priv_SPI[bus].hold = 1U * 1000000U / (priv_SPI[bus].clock / 1000U);
+	priv_SPI[bus].mode = mode;
 
 	switch (mode & 3U) {
 
@@ -102,7 +104,7 @@ void SPI_startup(int bus, int freq, int mode)
 	}
 
 #if defined(STM32F4)
-	dsize = (mode & SPI_DATA_8) ? 0U : 1U;
+	dsize = (mode & SPI_DATA_BYTE) ? 0U : 1U;
 
 	/* Configure SPI.
 	 * */
@@ -111,7 +113,7 @@ void SPI_startup(int bus, int freq, int mode)
 	priv_SPI[bus].SPI->CR2 = 0;
 
 #elif defined(STM32F7)
-	dsize = (mode & SPI_DATA_8) ? 7U : 15U;
+	dsize = (mode & SPI_DATA_BYTE) ? 7U : 15U;
 
 	/* Configure SPI.
 	 * */
@@ -162,6 +164,42 @@ void SPI_startup(int bus, int freq, int mode)
 			break;
 	}
 
+	if (mode & SPI_MOSI_OPEN_DRAIN) {
+
+		switch (bus) {
+
+			default:
+			case BUS_ID_SPI1:
+				GPIO_set_mode_OPEN_DRAIN(GPIO_SPI1_MOSI);
+				break;
+
+			case BUS_ID_SPI2:
+				GPIO_set_mode_OPEN_DRAIN(GPIO_SPI2_MOSI);
+				break;
+
+			case BUS_ID_SPI3:
+				GPIO_set_mode_OPEN_DRAIN(GPIO_SPI3_MOSI);
+				break;
+		}
+	}
+	else {
+		switch (bus) {
+
+			default:
+			case BUS_ID_SPI1:
+				GPIO_set_mode_PUSH_PULL(GPIO_SPI1_MOSI);
+				break;
+
+			case BUS_ID_SPI2:
+				GPIO_set_mode_PUSH_PULL(GPIO_SPI2_MOSI);
+				break;
+
+			case BUS_ID_SPI3:
+				GPIO_set_mode_PUSH_PULL(GPIO_SPI3_MOSI);
+				break;
+		}
+	}
+
 	if (mode & SPI_DMA) {
 
 		/* Enable TIM8 clock.
@@ -182,7 +220,7 @@ void SPI_startup(int bus, int freq, int mode)
 		TIM8->CCR3 = 42;	/* rxbuf = DR */
 		TIM8->CCR4 = 42;	/* NSS = 1 */
 
-		dsize = (mode & SPI_DATA_8) ? 0U : 1U;
+		dsize = (mode & SPI_DATA_BYTE) ? 0U : 1U;
 
 		/* Enable DMA on TIM8_CH3.
 		 * */
@@ -200,7 +238,7 @@ void SPI_startup(int bus, int freq, int mode)
 		DMA2_Stream3->PAR = (uint32_t) &priv_SPI[bus].SPI->DR;
 		DMA2_Stream3->FCR = DMA_SxFCR_DMDIS;
 
-		if (mode & SPI_NSS_ON) {
+		if (mode & SPI_NSS_ON_WORD) {
 
 			TIM8->DIER |= TIM_DIER_CC4DE | TIM_DIER_CC1DE;
 
@@ -247,6 +285,26 @@ void SPI_startup(int bus, int freq, int mode)
 			DMA2_Stream2->CR |= DMA_SxCR_EN;
 			DMA2_Stream7->CR |= DMA_SxCR_EN;
 		}
+		else if (mode & SPI_NSS_ON_TRANSFER) {
+
+			TIM8->DIER |= TIM_DIER_CC4DE | TIM_DIER_CC1DE;
+
+			/* Enable DMA on TIM8_CH1.
+			 * */
+			DMA2_Stream2->CR = (7U << DMA_SxCR_CHSEL_Pos) | DMA_SxCR_PL_1
+				| (2U << DMA_SxCR_MSIZE_Pos) | (2U << DMA_SxCR_PSIZE_Pos)
+				| DMA_SxCR_MINC | DMA_SxCR_DIR_0;
+			DMA2_Stream2->PAR = (uint32_t) XGPIO_GET_BSRR(priv_SPI[bus].gpio_NSS);
+			DMA2_Stream2->FCR = DMA_SxFCR_DMDIS;
+
+			/* Enable DMA on TIM8_CH4.
+			 * */
+			DMA2_Stream7->CR = (7U << DMA_SxCR_CHSEL_Pos) | DMA_SxCR_PL_1
+				| (2U << DMA_SxCR_MSIZE_Pos) | (2U << DMA_SxCR_PSIZE_Pos)
+				| DMA_SxCR_MINC | DMA_SxCR_DIR_0;
+			DMA2_Stream7->PAR = (uint32_t) XGPIO_GET_BSRR(priv_SPI[bus].gpio_NSS);
+			DMA2_Stream7->FCR = DMA_SxFCR_DMDIS;
+		}
 	}
 
 	/* Enable SPI.
@@ -286,7 +344,7 @@ void SPI_halt(int bus)
 			break;
 	}
 
-	if (priv_SPI[bus].dmabuf[0] != 0) {
+	if (priv_SPI[bus].mode & SPI_DMA) {
 
 		int		N = 0;
 
@@ -318,9 +376,6 @@ void SPI_halt(int bus)
 		/* Disable TIM8 clock.
 		 * */
 		RCC->APB2ENR &= ~RCC_APB2ENR_TIM8EN;
-
-		priv_SPI[bus].dmabuf[0] = 0U;
-		priv_SPI[bus].dmabuf[1] = 0U;
 	}
 
 	/* Disable SPI.
@@ -345,6 +400,7 @@ void SPI_halt(int bus)
 	}
 
 	priv_SPI[bus].SPI = (SPI_TypeDef *) 0;
+	priv_SPI[bus].mode = 0;
 }
 
 uint16_t SPI_transfer(int bus, uint16_t txbuf)
@@ -389,8 +445,11 @@ uint16_t SPI_transfer(int bus, uint16_t txbuf)
 	return txbuf;
 }
 
-void SPI_transfer_dma(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len)
+void SPI_dma_transfer(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len)
 {
+	if (priv_SPI[bus].SPI == 0)
+		return;
+
 	DMA2_Stream4->CR &= ~DMA_SxCR_EN;
 	DMA2_Stream3->CR &= ~DMA_SxCR_EN;
 
@@ -409,8 +468,8 @@ void SPI_transfer_dma(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len)
 	__ISB();
 #endif /* STM32F7 */
 
-	DMA2_Stream4->NDTR = len;
-	DMA2_Stream3->NDTR = len;
+	DMA2_Stream4->NDTR = (uint32_t) len;
+	DMA2_Stream3->NDTR = (uint32_t) len;
 
 	DMA2_Stream4->M0AR = (uint32_t) rxbuf;
 	DMA2_Stream3->M0AR = (uint32_t) txbuf;
@@ -425,11 +484,66 @@ void SPI_transfer_dma(int bus, const uint16_t *txbuf, uint16_t *rxbuf, int len)
 	DMA2_Stream4->CR |= DMA_SxCR_EN;
 	DMA2_Stream3->CR |= DMA_SxCR_EN;
 
+	if (priv_SPI[bus].mode & SPI_NSS_ON_TRANSFER) {
+
+		int		N, Nb;
+
+		DMA2_Stream2->CR &= ~DMA_SxCR_EN;
+		DMA2_Stream7->CR &= ~DMA_SxCR_EN;
+
+		Nb = XGPIO_GET_N(priv_SPI[bus].gpio_NSS);
+
+		for (N = 0; N < 4; ++N) {
+
+			priv_SPI[bus].dmabuf[N] = (1U << (Nb + 16));
+			priv_SPI[bus].dmabuf[N + 4] = (N + 1 < len)
+					? (1U << (Nb + 16)) : (1U << Nb);
+		}
+
+		__DSB();
+
+#ifdef STM32F7
+		/* Clean D-Cache on DMABUF.
+		 * */
+		SCB->DCCMVAC = (uint32_t) &priv_SPI[bus].dmabuf[0];
+
+		__DSB();
+		__ISB();
+#endif /* STM32F7 */
+
+		DMA2_Stream2->NDTR = (uint32_t) len;
+		DMA2_Stream7->NDTR = (uint32_t) len;
+
+		DMA2_Stream2->M0AR = (uint32_t) &priv_SPI[bus].dmabuf[0];
+		DMA2_Stream7->M0AR = (uint32_t) &priv_SPI[bus].dmabuf[4];
+
+		DMA2->LIFCR = DMA_LIFCR_CTCIF2 | DMA_LIFCR_CHTIF2
+			| DMA_LIFCR_CTEIF2 | DMA_LIFCR_CFEIF2;
+		DMA2->HIFCR = DMA_HIFCR_CTCIF7 | DMA_HIFCR_CHTIF7
+			| DMA_HIFCR_CTEIF7 | DMA_HIFCR_CFEIF7;
+
+		/* Enable DMA2.
+		 * */
+		DMA2_Stream2->CR |= DMA_SxCR_EN;
+		DMA2_Stream7->CR |= DMA_SxCR_EN;
+	}
+
 	TIM8->CNT = 0;
-	TIM8->RCR = len - 1U;
+	TIM8->RCR = (uint32_t) len - 1U;
 
 	/* Start TIM8.
 	 * */
 	TIM8->CR1 |= TIM_CR1_CEN;
+}
+
+int SPI_dma_busy(int bus)
+{
+	if (priv_SPI[bus].mode & SPI_DMA) {
+
+		if (TIM8->CR1 & TIM_CR1_CEN)
+			return HAL_ENABLED;
+	}
+
+	return HAL_DISABLED;
 }
 

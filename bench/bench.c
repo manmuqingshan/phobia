@@ -416,20 +416,20 @@ void bench_script()
 
 	tlm_restart();
 
-	m.Rs = 20.e-3;
-	m.Ld = 15.e-6;
-	m.Lq = 25.e-6;
-	m.Udc = 49.;
+	m.Rs = 371.e-3;
+	m.Ld = 504.e-6;
+	m.Lq = 819.e-6;
+	m.Udc = 24.;
 	m.Rdc = 0.1;
-	m.Zp = 5;
-	m.lambda = blm_Kv_lambda(&m, 58.);
-	m.Jm = 17.e-3;
+	m.Zp = 18;
+	m.lambda = blm_Kv_lambda(&m, 10.);
+	m.Jm = 97.e-3;
 
 	ts_script_default();
 	ts_script_base();
 	blm_restart(&m);
 
-	m.Jm = 5.e+7;
+	/*m.Jm = 5.e+7;
 
 	pm.fsm_req = PM_STATE_PROBE_CONST_SATURATION;
 	ts_wait_IDLE();
@@ -443,21 +443,23 @@ void bench_script()
 	pm.const_Rs = pm.const_im_Rz;
 
 	printf("const_Rs = %.4e (Ohm)\n", pm.const_Rs);
-	printf("self_DTu = %.4f (V)\n", pm.self_DTu);
+	printf("self_DTu = %.4f (V)\n", pm.self_DTu);*/
 
 	/*ts_adjust_sensor_hall();
 	blm_restart(&m);
 
 	pm.config_LU_SENSOR = PM_SENSOR_HALL;
+	pm.zone_threshold *= 1000.f;
+	pm.lu_transient *= 5.f;
 
 	pm.watt_wA_maximal = 80.f;
-	pm.watt_wA_reverse = 80.f;
+	pm.watt_wA_reverse = 80.f;*/
 
 	pm.fsm_req = PM_STATE_LU_STARTUP;
 	ts_wait_IDLE();
 
-	pm.s_setpoint_speed = 800.f;
-	sim_runtime(2.0);*/
+	pm.s_setpoint_speed = 100.f;
+	sim_runtime(2.0);
 
 	tlm_PWM_grab();
 }

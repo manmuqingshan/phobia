@@ -326,21 +326,6 @@ reg_proc_task(const reg_t *reg, rval_t *lval, const rval_t *rval)
 }
 
 static void
-reg_proc_dc_threshold(const reg_t *reg, rval_t *lval, const rval_t *rval)
-{
-	if (lval != NULL) {
-
-		lval->f = reg->link->f;
-	}
-	else if (rval != NULL) {
-
-		pm.ts_threshold = (int) (hal.PWM_frequency * rval->f * 0.000001f + 0.5f);
-
-		reg->link->f = (float) pm.ts_threshold * 1000000.f / hal.PWM_frequency;
-	}
-}
-
-static void
 reg_proc_ppm_freq(const reg_t *reg, rval_t *lval, const rval_t *rval)
 {
 	if (lval != NULL) {
@@ -2044,6 +2029,7 @@ const reg_t		regfile[] = {
 	REG_DEF(ap.task_AUTOSTART,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
 	REG_DEF(ap.task_BUTTON,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
 	REG_DEF(ap.task_AS5047,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
+	REG_DEF(ap.task_TLE5012,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
 	REG_DEF(ap.task_HX711,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
 	REG_DEF(ap.task_MPU6050,,,		"",	"%0i",	REG_CONFIG, &reg_proc_task, &reg_format_enum),
 
@@ -2053,11 +2039,11 @@ const reg_t		regfile[] = {
 	REG_DEF(ap.load_HX711,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
 
 	REG_DEF(pm.dc_resolution,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
+	REG_DEF(pm.dc_threshold,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.dc_minimal,,,		"us",	"%3f",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.dc_clearance,,,		"us",	"%3f",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.dc_skip,,,			"us",	"%3f",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.dc_bootstrap,,,		"ms",	"%1f",	REG_CONFIG, NULL, NULL),
-	REG_DEF(pm.dc_threshold,,,		"us",	"%1f",	REG_CONFIG, &reg_proc_dc_threshold, NULL),
 
 	REG_DEF(pm.self_BST,,,			"",	"%0i",	REG_READ_ONLY, NULL, &reg_format_self_BST),
 	REG_DEF(pm.self_IST,,,			"",	"%0i",	REG_READ_ONLY, NULL, &reg_format_self_IST),
@@ -2460,7 +2446,6 @@ const reg_t		regfile[] = {
 	REG_DEF(tlm.auto_STARTUP,,,		"",	"%0i",	REG_CONFIG, NULL, &reg_format_enum),
 	REG_DEF(tlm.mode,,,			"",	"%0i",	REG_READ_ONLY, NULL, &reg_format_enum),
 	REG_DEF(tlm.length_MAX,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
-	REG_DEF(tlm.line,,,			"",	"%0i",	REG_READ_ONLY, NULL, NULL),
 
 	REG_DEF(tlm.reg_ID, 0, [0],		"",	"%0i",	REG_CONFIG | REG_LINKED, NULL, NULL),
 	REG_DEF(tlm.reg_ID, 1, [1],		"",	"%0i",	REG_CONFIG | REG_LINKED, NULL, NULL),

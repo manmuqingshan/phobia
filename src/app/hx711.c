@@ -22,7 +22,7 @@ AP_TASK_DEF(HX711)
 
 	int			DOUT, ADC, N;
 
-	if (SPI_is_halted(HW_SPI_EXT_ID) != HAL_OK) {
+	if (SPI_halted(HW_SPI_EXT_ID) != HAL_OK) {
 
 		printf("Unable to start application when SPI is busy" EOL);
 
@@ -60,6 +60,7 @@ AP_TASK_DEF(HX711)
 			for (N = 0; N < 25; ++N) {
 
 				GPIO_set_HIGH(gpio_PD_SCK);
+
 				TIM_wait_ns(550);
 
 				DOUT = GPIO_get_STATE(gpio_DOUT);
@@ -75,6 +76,7 @@ AP_TASK_DEF(HX711)
 				}
 
 				GPIO_set_LOW(gpio_PD_SCK);
+
 				TIM_wait_ns(550);
 			}
 

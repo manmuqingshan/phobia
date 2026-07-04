@@ -33,6 +33,8 @@
 
 #include "gpio.h"
 
+#define HW_LOW_FET				XGPIO_OPEN_DRAIN | XGPIO_DATA_INVERSE
+
 /* We include appropriate configuration file according to the hardware revision
  * selected in make options.
  * */

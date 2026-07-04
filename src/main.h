@@ -95,6 +95,7 @@ typedef struct {
 	int			task_AUTOSTART;
 	int			task_BUTTON;
 	int			task_AS5047;
+	int			task_TLE5012;
 	int			task_HX711;
 	int			task_MPU6050;
 

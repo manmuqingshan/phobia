@@ -4564,6 +4564,8 @@ page_application(struct public *pub)
 
 	struct nk_color			warning;
 
+	int				reg_SPI_EABI = 0;
+
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
 
@@ -4613,11 +4615,30 @@ page_application(struct public *pub)
 	}
 
 	reg_enum_toggle(pub, "ap.task_AS5047", "SPI AS5047 magnetic encoder");
+	reg_enum_toggle(pub, "ap.task_TLE5012", "SPI TLE5012 angle sensor");
 
-	reg = link_reg_lookup(lp, "ap.task_AS5047");
+	do {
+		reg = link_reg_lookup(lp, "ap.task_AS5047");
 
-	if (		reg != NULL
-			&& reg->lval != 0) {
+		if (		reg != NULL
+				&& reg->lval != 0) {
+
+			reg_SPI_EABI = 1;
+			break;
+		}
+
+		reg = link_reg_lookup(lp, "ap.task_TLE5012");
+
+		if (		reg != NULL
+				&& reg->lval != 0) {
+
+			reg_SPI_EABI = 1;
+			break;
+		}
+	}
+	while (0);
+
+	if (reg_SPI_EABI != 0) {
 
 		nk_layout_row_dynamic(ctx, 0, 1);
 		nk_spacer(ctx);
@@ -4800,11 +4821,11 @@ page_config(struct public *pub)
 		nk_spacer(ctx);
 
 		reg_float(pub, "pm.dc_resolution", "PWM resolution");
+		reg_float(pub, "pm.dc_threshold", "Fault threshold");
 		reg_float(pub, "pm.dc_minimal", "Minimal pulse");
 		reg_float(pub, "pm.dc_clearance", "Clearance before ADC sample");
 		reg_float(pub, "pm.dc_skip", "Skip after ADC sample");
 		reg_float(pub, "pm.dc_bootstrap", "Bootstrap retention");
-		reg_float(pub, "pm.dc_threshold", "Fault threshold");
 
 		nk_layout_row_dynamic(ctx, 0, 1);
 		nk_spacer(ctx);
@@ -5476,12 +5497,15 @@ page_lu_eabi(struct public *pub)
 
 	reg = link_reg_lookup(lp, "hal.DPS_mode");
 
-	if (reg != NULL && reg->lval != 2) {
+	if (		reg != NULL
+			&& reg->lval != 2
+			&& reg->lval != 3) {
 
 		warning = nk->table[NK_COLOR_FLICKER_ALERT];
 
 		nk_label_colored(ctx, 	"NOTE: Select DPS mode `DPS_DRIVE_EABI`"
-					" on `HAL` page", NK_TEXT_LEFT, warning);
+					" or `DPS_DRIVE_ON_SPI` on `HAL` page",
+					NK_TEXT_LEFT, warning);
 
 		nk_layout_row_dynamic(ctx, 0, 1);
 		nk_spacer(ctx);

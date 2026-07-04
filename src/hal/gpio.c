@@ -23,6 +23,9 @@ void GPIO_set_mode_OUTPUT(int xGPIO)
 
 		GPIO->OTYPER |= (1U << N);
 	}
+	else {
+		GPIO->OTYPER &= ~(1U << N);
+	}
 }
 
 void GPIO_set_mode_ANALOG(int xGPIO)
@@ -102,7 +105,7 @@ void GPIO_set_HIGH(int xGPIO)
 {
 	XGPIO_DECODE(xGPIO);
 
-	if ((xGPIO & XGPIO_OPEN_DRAIN) == 0U) {
+	if ((xGPIO & XGPIO_DATA_INVERSE) == 0U) {
 
 		GPIO->BSRR = (1U << N);
 	}
@@ -115,7 +118,7 @@ void GPIO_set_LOW(int xGPIO)
 {
 	XGPIO_DECODE(xGPIO);
 
-	if ((xGPIO & XGPIO_OPEN_DRAIN) == 0U) {
+	if ((xGPIO & XGPIO_DATA_INVERSE) == 0U) {
 
 		GPIO->BSRR = (1U << (N + 16));
 	}
@@ -128,6 +131,12 @@ int GPIO_get_STATE(int xGPIO)
 {
 	XGPIO_DECODE(xGPIO);
 
-	return (GPIO->IDR & (1U << N)) ? 1 : 0;
+	if ((xGPIO & XGPIO_DATA_INVERSE) == 0U) {
+
+		return (GPIO->IDR & (1U << N)) ? 1 : 0;
+	}
+	else {
+		return (GPIO->IDR & (1U << N)) ? 0 : 1;
+	}
 }
 

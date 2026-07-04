@@ -53,13 +53,18 @@ AS5047_parity(uint16_t x)
 
 int AS5047_get_EP()
 {
-	const uint16_t	rxbuf_ANGLE = priv_AS5047.rxbuf[1];
+	uint16_t	ANGLE;
 
-	if ((rxbuf_ANGLE & AS5047_EF) == 0U) {
+	if (SPI_dma_busy(HW_SPI_EXT_ID) == HAL_ENABLED)
+		return priv_AS5047.EP;
 
-		if (AS5047_parity(rxbuf_ANGLE) == 0) {
+	ANGLE = priv_AS5047.rxbuf[1];
 
-			priv_AS5047.EP = (int) (rxbuf_ANGLE & AS5047_DATA);
+	if ((ANGLE & AS5047_EF) == 0U) {
+
+		if (AS5047_parity(ANGLE) == 0) {
+
+			priv_AS5047.EP = (int) (ANGLE & AS5047_DATA);
 		}
 		else {
 			priv_AS5047.PA_errcnt++;
@@ -72,7 +77,7 @@ int AS5047_get_EP()
 	priv_AS5047.txbuf[0] = AS5047_PARD | AS5047_READ | AS5047_REG_ANGLECOM;
 	priv_AS5047.txbuf[1] = AS5047_PARD | AS5047_READ | AS5047_REG_NOP;
 
-	SPI_transfer_dma(HW_SPI_EXT_ID, priv_AS5047.txbuf, priv_AS5047.rxbuf, 2);
+	SPI_dma_transfer(HW_SPI_EXT_ID, priv_AS5047.txbuf, priv_AS5047.rxbuf, 2);
 
 	return priv_AS5047.EP;
 }
@@ -81,16 +86,16 @@ AP_TASK_DEF(AS5047)
 {
 	AP_KNOB(knob);
 
-	if (SPI_is_halted(HW_SPI_EXT_ID) != HAL_OK) {
+	if (SPI_halted(HW_SPI_EXT_ID) != HAL_OK) {
 
 		printf("Unable to start application when SPI is busy" EOL);
 
 		AP_TERMINATE(knob);
 	}
 
-	SPI_startup(HW_SPI_EXT_ID, AS5047_FREQUENCY, SPI_LOW_FALLING | SPI_DMA | SPI_NSS_ON);
+	SPI_startup(HW_SPI_EXT_ID, AS5047_FREQUENCY, SPI_LOW_FALLING | SPI_DMA | SPI_NSS_ON_WORD);
 
-	hal_memory_fence();
+	vTaskDelay((TickType_t) 1);
 
 	ap.proc_get_EP = &AS5047_get_EP;
 
@@ -103,8 +108,8 @@ AP_TASK_DEF(AS5047)
 			if (		hal.DPS_mode == DPS_DRIVE_ON_SPI
 					&& pm.lu_MODE != PM_LU_DISABLED) {
 
-				if (		   priv_AS5047.EF_errcnt >= 10
-						|| priv_AS5047.PA_errcnt >= 10) {
+				if (		   priv_AS5047.EF_errcnt >= 100
+						|| priv_AS5047.PA_errcnt >= 100) {
 
 					pm.fsm_errno = PM_ERROR_SPI_DATA_FAULT;
 					pm.fsm_req = PM_STATE_HALT;
@@ -123,7 +128,7 @@ AP_TASK_DEF(AS5047)
 
 	ap.proc_get_EP = NULL;
 
-	vTaskDelay((TickType_t) 10);
+	vTaskDelay((TickType_t) 5);
 
 	SPI_halt(HW_SPI_EXT_ID);
 

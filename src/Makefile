@@ -69,7 +69,8 @@ OBJS	=  app/autostart.o \
 	   app/button.o \
 	   app/as5047.o \
 	   app/hx711.o \
-	   app/mpu6050.o
+	   app/mpu6050.o \
+	   app/tle5012.o
 
 ifeq ($(OBJ_LIB_CHERRY), 1)
 OBJS	+= cherry/usb_dc_dwc2.o \
