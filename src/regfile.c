@@ -2278,6 +2278,7 @@ const reg_t		regfile[] = {
 	REG_DEF(pm.eabi_F0, _X, [0],		"",	"%3f",	REG_CONFIG | REG_READ_ONLY | REG_HIDDEN, NULL, NULL),
 	REG_DEF(pm.eabi_F0, _Y, [1],		"",	"%3f",	REG_CONFIG | REG_READ_ONLY | REG_HIDDEN, NULL, NULL),
 	REG_DEF(pm.eabi_F0,,,			"deg",	"%2f",	REG_READ_ONLY, &reg_proc_fpos_nolock_deg, NULL),
+	REG_DEF(pm.eabi_Zf,,,			"",	"%2f",	REG_READ_ONLY, NULL, NULL),
 	REG_DEF(pm.eabi_const_EP,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.eabi_const_Zs,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.eabi_const_Zq,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),

@@ -5517,6 +5517,7 @@ page_lu_eabi(struct public *pub)
 	nk_spacer(ctx);
 
 	reg_float(pub, "pm.eabi_F0", "EABI adjustment position");
+	reg_float(pub, "pm.eabi_Zf", "Probed number Zf");
 	reg_float(pub, "pm.eabi_const_EP", "EABI pulse resolution");
 	reg_float(pub, "pm.eabi_const_Zs", "Gear teeth number S");
 	reg_float(pub, "pm.eabi_const_Zq", "Gear teeth number Q");

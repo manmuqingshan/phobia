@@ -1633,6 +1633,8 @@ plotDataSubtractWrite(plot_t *pl, int dN, int sN, int rN_beg, int id_N_beg, int 
 
 		mask = ((1U << (ulval - shift + 1U)) - 1U) << shift;
 
+		X2 = (fval_t) (0.5 / pow(10., (double) pl->fprecision));
+
 		do {
 			row = plotDataWrite(pl, dN, &rN);
 
@@ -1641,7 +1643,7 @@ plotDataSubtractWrite(plot_t *pl, int dN, int sN, int rN_beg, int id_N_beg, int 
 
 			X1 = (cNX < 0) ? id_N : row[cNX];
 
-			ulval = ((unsigned long) X1 & mask) >> shift;
+			ulval = ((unsigned long) (X1 + X2) & mask) >> shift;
 			row[cN] = (fval_t) ulval;
 
 			id_N++;

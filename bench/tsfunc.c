@@ -433,9 +433,10 @@ void ts_adjust_sensor_eabi()
 
 		F0g = atan2(pm.eabi_F0[1], pm.eabi_F0[0]) * (180. / M_PI);
 
+		printf("eabi_F0 = %.1f (deg)\n", F0g);
+		printf("eabi_Zf = %.2f\n", pm.eabi_Zf);
 		printf("eabi_const_EP = %i\n", pm.eabi_const_EP);
 		printf("eabi_const_Zs = %i\n", pm.eabi_const_Zs);
-		printf("eabi_F0 = %.1f (deg)\n", F0g);
 
 		pm.fsm_req = PM_STATE_LU_SHUTDOWN;
 

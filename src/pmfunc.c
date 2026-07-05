@@ -751,9 +751,10 @@ SH_DEF(pm_adjust_sensor_eabi)
 		if (pm_wait_IDLE() != PM_OK)
 			break;
 
+		reg_OUTP(ID_PM_EABI_F0);
+		reg_OUTP(ID_PM_EABI_ZF);
 		reg_OUTP(ID_PM_EABI_CONST_EP);
 		reg_OUTP(ID_PM_EABI_CONST_ZS);
-		reg_OUTP(ID_PM_EABI_F0);
 
 		pm.fsm_req = PM_STATE_LU_SHUTDOWN;
 

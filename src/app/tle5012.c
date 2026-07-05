@@ -92,6 +92,40 @@ int TLE5012_get_EP()
 	return priv_TLE5012.EP;
 }
 
+static void
+TLE5012_startup(int bus)
+{
+	uint16_t		txbuf, rxbuf, safet;
+	int			tle5012_NSS;
+
+	tle5012_NSS = SPI_gpio_NSS(bus);
+
+	GPIO_set_LOW(tle5012_NSS);
+	TIM_wait_ns(1500);
+
+	GPIO_set_HIGH(tle5012_NSS);
+	TIM_wait_ns(900);
+
+	GPIO_set_LOW(tle5012_NSS);
+	TIM_wait_ns(500);
+
+	txbuf = TLE5012_READ | TLE5012_REG_STAT | TLE5012_ND1;
+
+	SPI_transfer(bus, txbuf);
+	rxbuf = SPI_transfer(bus, 0xFFFFU);
+	safet = SPI_transfer(bus, 0xFFFFU);
+
+	TIM_wait_ns(500);
+
+	GPIO_set_HIGH(tle5012_NSS);
+	TIM_wait_ns(900);
+
+	if ((rxbuf & 0xFFFEU) != 0x8000U) {
+
+		log_TRACE("TLE5012 STAT %4x %4x" EOL, rxbuf, safet);
+	}
+}
+
 AP_TASK_DEF(TLE5012)
 {
 	AP_KNOB(knob);
@@ -103,12 +137,10 @@ AP_TASK_DEF(TLE5012)
 		AP_TERMINATE(knob);
 	}
 
-	// FIXME !!!
-	/*SPI_startup(HW_SPI_EXT_ID, TLE5012_FREQUENCY, SPI_LOW_FALLING | SPI_DMA | SPI_NSS_ON_WORD);
-	SPI_halt(HW_SPI_EXT_ID);*/
-
 	SPI_startup(HW_SPI_EXT_ID, TLE5012_FREQUENCY, SPI_LOW_FALLING
 			| SPI_DMA | SPI_NSS_ON_TRANSFER | SPI_MOSI_OPEN_DRAIN);
+
+	TLE5012_startup(HW_SPI_EXT_ID);
 
 	vTaskDelay((TickType_t) 1);
 

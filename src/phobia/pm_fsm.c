@@ -2547,9 +2547,9 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 				if (		m_isfinitef(ls->sol.m[1]) != 0
 						&& ls->sol.m[1] > M_EPSILON) {
 
-					v[0] = pm->eabi_const_EP / ls->sol.m[1];
+					pm->eabi_Zf = pm->eabi_const_EP / ls->sol.m[1];
 
-					pm->eabi_const_EP = (int) (v[0] + 0.5f);
+					pm->eabi_const_EP = (int) (pm->eabi_Zf + 0.5f);
 
 					pm_lazy_build(pm);
 				}
@@ -2565,14 +2565,14 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 				if (		m_isfinitef(ls->sol.m[1]) != 0
 						&& ls->sol.m[1] > M_EPSILON) {
 
-					v[0] = pm->eabi_const_Zs * ls->sol.m[1];
+					pm->eabi_Zf = pm->eabi_const_Zs * ls->sol.m[1];
 
 					if (pm->eabi_const_Zs < 0) {
 
-						pm->eabi_const_Zs = (int) (v[0] - 0.5f);
+						pm->eabi_const_Zs = (int) (pm->eabi_Zf - 0.5f);
 					}
 					else {
-						pm->eabi_const_Zs = (int) (v[0] + 0.5f);
+						pm->eabi_const_Zs = (int) (pm->eabi_Zf + 0.5f);
 					}
 
 					pm_lazy_build(pm);

@@ -22,6 +22,11 @@ int SPI_halted(int bus)
 	return (priv_SPI[bus].SPI == (SPI_TypeDef *) 0) ? HAL_OK : HAL_FAULT;
 }
 
+int SPI_gpio_NSS(int bus)
+{
+	return priv_SPI[bus].gpio_NSS;
+}
+
 void SPI_startup(int bus, int freq, int mode)
 {
 	int			clock, baud, dsize, cpol, N;
@@ -420,8 +425,11 @@ uint16_t SPI_transfer(int bus, uint16_t txbuf)
 		N++;
 	}
 
-	GPIO_set_LOW(priv_SPI[bus].gpio_NSS);
-	TIM_wait_ns(priv_SPI[bus].hold);
+	if (priv_SPI[bus].mode & SPI_NSS_ON_WORD) {
+
+		GPIO_set_LOW(priv_SPI[bus].gpio_NSS);
+		TIM_wait_ns(priv_SPI[bus].hold);
+	}
 
 	priv_SPI[bus].SPI->DR = txbuf;
 
@@ -439,8 +447,11 @@ uint16_t SPI_transfer(int bus, uint16_t txbuf)
 
 	TIM_wait_ns(priv_SPI[bus].hold);
 
-	GPIO_set_HIGH(priv_SPI[bus].gpio_NSS);
-	TIM_wait_ns(priv_SPI[bus].hold);
+	if (priv_SPI[bus].mode & SPI_NSS_ON_WORD) {
+
+		GPIO_set_HIGH(priv_SPI[bus].gpio_NSS);
+		TIM_wait_ns(priv_SPI[bus].hold);
+	}
 
 	return txbuf;
 }

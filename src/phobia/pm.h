@@ -477,6 +477,7 @@ typedef struct {
 	int		eabi_unwrap;
 	float		eabi_interp;
 	float		eabi_F0[2];
+	float		eabi_Zf;
 	int		eabi_const_EP;
 	int		eabi_const_Zs;
 	int		eabi_const_Zq;

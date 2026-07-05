@@ -50,6 +50,7 @@ enum {
 };
 
 int SPI_halted(int bus);
+int SPI_gpio_NSS(int bus);
 
 void SPI_startup(int bus, int freq_hz, int mode);
 void SPI_halt(int bus);
