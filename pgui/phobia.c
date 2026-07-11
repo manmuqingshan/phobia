@@ -114,8 +114,6 @@ struct public {
 	struct {
 
 		int			log_flush;
-		char			log_message[4000];
-
 		int			log_GP;
 
 		char			file_snap[PHOBIA_PATH_MAX];
@@ -142,7 +140,6 @@ struct public {
 
 	Uint32			gp_ID;
 
-	char			popup_msg[LINK_LINE_MAX];
 	int			popup_enum;
 
 	char			lbuf[PHOBIA_PATH_MAX];
@@ -720,7 +717,7 @@ pub_popup_about(struct public *pub, int popup)
 }
 
 static void
-pub_popup_message(struct public *pub, int popup)
+pub_popup_message(struct public *pub, int popup, const char *title)
 {
 	struct nk_sdl			*nk = pub->nk;
 	struct link_pmc			*lp = pub->lp;
@@ -735,7 +732,7 @@ pub_popup_message(struct public *pub, int popup)
 
 	bounds = pub_get_popup_bounds_about(pub);
 
-	if (nk_popup_begin(ctx, NK_POPUP_DYNAMIC, " ", NK_WINDOW_CLOSABLE
+	if (nk_popup_begin(ctx, NK_POPUP_DYNAMIC, title, NK_WINDOW_CLOSABLE
 				| NK_WINDOW_NO_SCROLLBAR, bounds)) {
 
 		nk_layout_row_dynamic(ctx, pub->fe_font_h / 2, 1);
@@ -776,6 +773,44 @@ pub_popup_message(struct public *pub, int popup)
 
 			nk_spacer(ctx);
 		}
+		else if (popup == POPUP_DEBUG_LOG) {
+
+			nk_layout_row_template_begin(ctx, 0);
+			nk_layout_row_template_push_variable(ctx, 1);
+			nk_layout_row_template_push_static(ctx, pub->fe_base * 8);
+			nk_layout_row_template_push_static(ctx, pub->fe_base);
+			nk_layout_row_template_push_static(ctx, pub->fe_base * 8);
+			nk_layout_row_template_push_variable(ctx, 1);
+			nk_layout_row_template_end(ctx);
+
+			nk_spacer(ctx);
+
+			if (nk_button_label(ctx, "OK")) {
+
+				nk_popup_close(ctx);
+
+				pub->popup_enum = 0;
+
+				lp->command_state = LINK_COMMAND_NONE;
+				lp->command_grab[0] = 0;
+			}
+
+			nk_spacer(ctx);
+
+			if (nk_button_label(ctx, "Clean")) {
+
+				nk_popup_close(ctx);
+
+				pub->popup_enum = 0;
+
+				lp->command_state = LINK_COMMAND_NONE;
+				lp->command_grab[0] = 0;
+
+				link_command(pub->lp, "ap_log_clean");
+			}
+
+			nk_spacer(ctx);
+		}
 		else {
 			nk_layout_row_template_begin(ctx, 0);
 			nk_layout_row_template_push_variable(ctx, 1);
@@ -805,78 +840,6 @@ pub_popup_message(struct public *pub, int popup)
 
 		lp->command_state = LINK_COMMAND_NONE;
 		lp->command_grab[0] = 0;
-	}
-}
-
-static void
-pub_popup_debug_log(struct public *pub, int popup, const char *title)
-{
-	struct nk_sdl			*nk = pub->nk;
-	struct nk_context		*ctx = &nk->ctx;
-
-	struct nk_rect			bounds;
-
-	if (pub->popup_enum != popup)
-		return ;
-
-	bounds = pub_get_popup_bounds_about(pub);
-
-	if (nk_popup_begin(ctx, NK_POPUP_DYNAMIC, title, NK_WINDOW_CLOSABLE
-				| NK_WINDOW_NO_SCROLLBAR, bounds)) {
-
-		nk_layout_row_dynamic(ctx, pub->fe_font_h / 2, 1);
-		nk_spacer(ctx);
-
-		nk_layout_row_template_begin(ctx, pub->fe_font_h * 12);
-		nk_layout_row_template_push_static(ctx, pub->fe_base);
-		nk_layout_row_template_push_variable(ctx, 1);
-		nk_layout_row_template_push_static(ctx, pub->fe_base);
-		nk_layout_row_template_end(ctx);
-
-		nk_spacer(ctx);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_SELECTABLE | NK_EDIT_MULTILINE,
-				pub->debug.log_message, sizeof(pub->debug.log_message),
-				nk_filter_default);
-		nk_spacer(ctx);
-
-		nk_layout_row_dynamic(ctx, pub->fe_font_h / 2, 1);
-		nk_spacer(ctx);
-
-		nk_layout_row_template_begin(ctx, 0);
-		nk_layout_row_template_push_variable(ctx, 1);
-		nk_layout_row_template_push_static(ctx, pub->fe_base * 8);
-		nk_layout_row_template_push_static(ctx, pub->fe_base);
-		nk_layout_row_template_push_static(ctx, pub->fe_base * 8);
-		nk_layout_row_template_push_variable(ctx, 1);
-		nk_layout_row_template_end(ctx);
-
-		nk_spacer(ctx);
-
-		if (nk_button_label(ctx, "OK")) {
-
-			nk_popup_close(ctx);
-
-			pub->popup_enum = 0;
-		}
-
-		nk_spacer(ctx);
-
-		if (nk_button_label(ctx, "Clean")) {
-
-			if (link_command(pub->lp, "ap_log_clean") != 0) {
-
-				nk_popup_close(ctx);
-
-				pub->popup_enum = 0;
-			}
-		}
-
-		nk_spacer(ctx);
-
-		nk_popup_end(ctx);
-	}
-	else {
-		pub->popup_enum = 0;
 	}
 }
 
@@ -3068,16 +3031,10 @@ page_diagnose(struct public *pub)
 
 		if (nk_menu_item_label(ctx, "RAM log flush", NK_TEXT_LEFT)) {
 
-			config_storage_path(pub->fe, pub->lbuf, FILE_DEBUG_LOG);
+			if (link_command(lp, "ap_log_flush") != 0) {
 
-			strcpy(pub->debug.file_snap, pub->lbuf);
-
-			if (link_grab_file_open(lp, pub->debug.file_snap) != 0) {
-
-				if (link_command(lp, "ap_log_flush") != 0) {
-
-					pub->debug.log_flush = 1;
-				}
+				pub->debug.log_flush = 1;
+				lp->command_state = LINK_COMMAND_PENDING;
 			}
 		}
 
@@ -3108,34 +3065,6 @@ page_diagnose(struct public *pub)
 
 	nk_style_pop_vec2(ctx);
 	nk_menubar_end(ctx);
-
-	if (		pub->debug.log_flush != 0
-			&& lp->grab_N == 0) {
-
-		pub->debug.log_flush = 0;
-
-		if (lp->linked != 0) {
-
-			FILE		*fd;
-			int		len;
-
-			fd = fopen_from_UTF8(pub->debug.file_snap, "rb");
-
-			if (fd != NULL) {
-
-				len = fread(pub->debug.log_message, 1,
-						sizeof(pub->debug.log_message) - 1, fd);
-
-				if (len != 0) {
-
-					pub->debug.log_message[len] = 0;
-					pub->popup_enum = POPUP_DEBUG_LOG;
-				}
-
-				fclose(fd);
-			}
-		}
-	}
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -3282,8 +3211,6 @@ page_diagnose(struct public *pub)
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
 
-	pub_popup_debug_log(pub, POPUP_DEBUG_LOG, "Debug log");
-
 	if (pub_popup_ok_cancel(pub, POPUP_RESET_DEFAULT,
 				"Please confirm that you really"
 				" want to reset all adjustment constants"
@@ -3306,12 +3233,21 @@ page_diagnose(struct public *pub)
 			&& lp->locked < lp->clock + 100
 			&& pub->popup_enum == POPUP_NONE) {
 
-		pub->popup_enum = POPUP_LINK_COMMAND;
+		if (pub->debug.log_flush != 0) {
+
+			pub->debug.log_flush = 0;
+			pub->popup_enum = POPUP_DEBUG_LOG;
+		}
+		else {
+			pub->popup_enum = POPUP_LINK_COMMAND;
+		}
+
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
+	pub_popup_message(pub, POPUP_DEBUG_LOG, "Debug");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -3693,10 +3629,11 @@ page_probe(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
+	nk_spacer(ctx);
 	nk_spacer(ctx);
 	nk_spacer(ctx);
 	nk_spacer(ctx);
@@ -4656,10 +4593,20 @@ page_application(struct public *pub)
 			nk_spacer(ctx);
 		}
 
+		reg = link_reg_lookup(lp, "ap.SPI_errate");
+		if (reg != NULL) { reg->update = 400; }
+
+		reg_float(pub, "ap.SPI_busnum", "SPI bus ID");
+		reg_float(pub, "ap.SPI_clock", "SPI clock");
+		reg_float(pub, "ap.SPI_errate", "SPI errate");
+
+		nk_layout_row_dynamic(ctx, 0, 1);
+		nk_spacer(ctx);
+
 		reg = link_reg_lookup(lp, "pm.fb_EP");
 		if (reg != NULL) { reg->update = 100; }
 
-		reg_float(pub, "pm.fb_EP", "EP feedback");
+		reg_float(pub, "pm.fb_EP", "EABI feedback");
 
 		nk_layout_row_dynamic(ctx, 0, 1);
 		nk_spacer(ctx);
@@ -4706,7 +4653,7 @@ page_application(struct public *pub)
 		lp->unable_warning = 0;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5009,7 +4956,7 @@ page_lu_forced(struct public *pub)
 	reg_float(pub, "pm.forced_slew_rate", "Current slew rate");
 	reg_float(pub, "pm.forced_fall_rate", "Current fall rate");
 	reg_float(pub, "pm.forced_stop_DC", "Stop DC threshold");
-	reg_float(pub, "pm.forced_gain_AQ", "Load torque GAIN");
+	reg_float(pub, "pm.forced_gain_AQ", "FORCED torque GAIN");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5161,8 +5108,8 @@ page_lu_flux(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5252,7 +5199,7 @@ page_lu_hfi(struct public *pub)
 
 	nk_spacer(ctx);
 
-	if (nk_group_begin(ctx, "MOTOR", NK_WINDOW_BORDER)) {
+	if (nk_group_begin(ctx, "MACHINE", NK_WINDOW_BORDER)) {
 
 		float		fpos[2] = { 0.f, 0.f };
 
@@ -5397,7 +5344,7 @@ page_lu_hall(struct public *pub)
 
 	nk_spacer(ctx);
 
-	if (nk_group_begin(ctx, "MOTOR", NK_WINDOW_BORDER)) {
+	if (nk_group_begin(ctx, "MACHINE", NK_WINDOW_BORDER)) {
 
 		float		fpos[2] = { 0.f, 0.f };
 
@@ -5433,8 +5380,8 @@ page_lu_hall(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5559,7 +5506,7 @@ page_lu_eabi(struct public *pub)
 
 	reg_float_um(pub, "pm.lu_location", "LU location", 0, 1);
 	reg_float_um(pub, "pm.lu_wS", "LU speed estimate", 0, 1);
-	reg_float(pub, "pm.fb_EP", "EP feedback");
+	reg_float(pub, "pm.fb_EP", "EABI feedback");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5571,7 +5518,7 @@ page_lu_eabi(struct public *pub)
 
 	nk_spacer(ctx);
 
-	if (nk_group_begin(ctx, "MOTOR", NK_WINDOW_BORDER)) {
+	if (nk_group_begin(ctx, "MACHINE", NK_WINDOW_BORDER)) {
 
 		float		fpos[2] = { 0.f, 0.f };
 		int		const_Zp = 1;
@@ -5609,8 +5556,8 @@ page_lu_eabi(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5737,7 +5684,7 @@ page_lu_sincos(struct public *pub)
 
 	nk_spacer(ctx);
 
-	if (nk_group_begin(ctx, "MOTOR", NK_WINDOW_BORDER)) {
+	if (nk_group_begin(ctx, "MACHINE", NK_WINDOW_BORDER)) {
 
 		float		fpos[2] = { 0.f, 0.f };
 		int		const_Zp = 1;
@@ -5775,8 +5722,8 @@ page_lu_sincos(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -5876,6 +5823,12 @@ page_lp_current(struct public *pub)
 	struct link_pmc			*lp = pub->lp;
 	struct nk_context		*ctx = &nk->ctx;
 	struct link_reg			*reg;
+
+	nk_layout_row_dynamic(ctx, 0, 1);
+	nk_spacer(ctx);
+
+	reg_enum_toggle(pub, "pm.config_RELUCTANCE", "Reluctance MTPA control");
+	reg_enum_toggle(pub, "pm.config_WEAKENING", "Flux WEAKENING control");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -6234,8 +6187,8 @@ page_lp_location(struct public *pub)
 		lp->command_state = LINK_COMMAND_WAITING;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
-	pub_popup_message(pub, POPUP_LINK_COMMAND);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
+	pub_popup_message(pub, POPUP_LINK_COMMAND, "Command");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);
@@ -6591,7 +6544,7 @@ page_flash(struct public *pub)
 		lp->unable_warning = 0;
 	}
 
-	pub_popup_message(pub, POPUP_UNABLE_WARNING);
+	pub_popup_message(pub, POPUP_UNABLE_WARNING, "Unable");
 
 	nk_layout_row_dynamic(ctx, 0, 1);
 	nk_spacer(ctx);

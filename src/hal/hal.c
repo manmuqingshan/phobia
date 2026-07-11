@@ -443,7 +443,7 @@ void hal_memory_fence()
 int log_status()
 {
 	return (	log.boot_FLAG == HAL_ENABLED
-			&& log.text_wp != log.text_rp) ? HAL_FAULT : HAL_OK;
+			&& log.wp != log.rp) ? HAL_FAULT : HAL_OK;
 }
 
 void log_bootup()
@@ -453,8 +453,8 @@ void log_bootup()
 		log.boot_FLAG = HAL_ENABLED;
 		log.boot_COUNT = 0U;
 
-		log.text_wp = 0;
-		log.text_rp = 0;
+		log.wp = 0;
+		log.rp = 0;
 	}
 	else {
 		log.boot_COUNT += 1U;
@@ -468,15 +468,15 @@ void log_putc(int c)
 		log.boot_FLAG = HAL_ENABLED;
 		log.boot_COUNT = 0U;
 
-		log.text_wp = 0;
-		log.text_rp = 0;
+		log.wp = 0;
+		log.rp = 0;
 	}
 
-	log.text[log.text_wp] = (char) c;
+	log.text[log.wp] = (char) c;
 
-	log.text_wp = HAL_LOG_INC(log.text_wp);
-	log.text_rp = (log.text_rp == log.text_wp)
-		? HAL_LOG_INC(log.text_rp) : log.text_rp;
+	log.wp = HAL_LOG_INC(log.wp);
+	log.rp = (log.rp == log.wp)
+		? HAL_LOG_INC(log.rp) : log.rp;
 }
 
 void log_flush()
@@ -485,8 +485,8 @@ void log_flush()
 
 	if (log.boot_FLAG == HAL_ENABLED) {
 
-		rp = log.text_rp;
-		wp = log.text_wp;
+		rp = log.rp;
+		wp = log.wp;
 
 		while (rp != wp) {
 
@@ -503,8 +503,8 @@ void log_clean()
 {
 	if (log.boot_FLAG == HAL_ENABLED) {
 
-		log.text_wp = 0;
-		log.text_rp = 0;
+		log.wp = 0;
+		log.rp = 0;
 	}
 }
 

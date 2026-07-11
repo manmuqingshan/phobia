@@ -2038,6 +2038,10 @@ const reg_t		regfile[] = {
 
 	REG_DEF(ap.load_HX711,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
 
+	REG_DEF(ap.SPI_busnum,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),
+	REG_DEF(ap.SPI_clock,,,			"Hz",	"%0i",	REG_CONFIG, NULL, NULL),
+	REG_DEF(ap.SPI_errate,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
+
 	REG_DEF(pm.dc_resolution,,,		"",	"%0i",	REG_READ_ONLY, NULL, NULL),
 	REG_DEF(pm.dc_threshold,,,		"",	"%0i",	REG_CONFIG, NULL, NULL),
 	REG_DEF(pm.dc_minimal,,,		"us",	"%3f",	REG_CONFIG, NULL, NULL),

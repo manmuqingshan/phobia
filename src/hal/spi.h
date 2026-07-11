@@ -37,10 +37,10 @@ enum {
 	SPI_DMA			= 4,
 	SPI_DATA_BYTE		= 8,
 
-	SPI_NSS_ON_WORD		= 16,
-	SPI_NSS_ON_TRANSFER	= 32,
+	SPI_NSS_ON_WORD		= (1U << 4),
+	SPI_NSS_ON_TRANSFER	= (1U << 5),
 
-	SPI_MOSI_OPEN_DRAIN	= 64
+	SPI_MOSI_OPEN_DRAIN	= (1U << 6)
 };
 
 enum {
@@ -52,7 +52,7 @@ enum {
 int SPI_halted(int bus);
 int SPI_gpio_NSS(int bus);
 
-void SPI_startup(int bus, int freq_hz, int mode);
+void SPI_startup(int bus, int freq, int mode);
 void SPI_halt(int bus);
 
 uint16_t SPI_transfer(int bus, uint16_t txbuf);

@@ -203,9 +203,10 @@ typedef struct {
 	uint32_t	boot_FLAG;
 	uint32_t	boot_COUNT;
 
-	char		text[2000];
-	int		text_wp;
-	int		text_rp;
+	char		text[2048];
+
+	int		wp;
+	int		rp;
 }
 LOG_t;
 

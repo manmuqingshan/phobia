@@ -768,6 +768,9 @@ default_flash_load()
 	ap.auto_reg_DATA = 0.f;
 	ap.auto_reg_ID = ID_PM_S_SETPOINT_SPEED_KNOB;
 
+	ap.SPI_busnum = HW_SPI_EXT_ID;
+	ap.SPI_clock = 4000000;		/* (Hz) */
+
 	pm.m_freq = hal.PWM_frequency;
 	pm.m_dT = 1.f / pm.m_freq;
 	pm.dc_resolution = hal.PWM_resolution;
@@ -1271,7 +1274,7 @@ SH_DEF(ap_version)
 
 SH_DEF(ap_gettime)
 {
-	printf("TIME %i %i" EOL, log.boot_COUNT, xTaskGetTickCount());
+	printf("Time %i %i" EOL, log.boot_COUNT, xTaskGetTickCount());
 }
 
 SH_DEF(ap_dbg_task)

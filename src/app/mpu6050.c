@@ -15,7 +15,7 @@ AP_TASK_DEF(MPU6050)
 {
 	AP_KNOB(knob);
 
-	if (SPI_halted(HW_SPI_EXT_ID) != HAL_OK) {
+	if (SPI_halted(ap.SPI_busnum) != HAL_OK) {
 
 		printf("Unable to start application when SPI is busy" EOL);
 

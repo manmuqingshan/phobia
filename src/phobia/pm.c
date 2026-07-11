@@ -1647,87 +1647,109 @@ pm_sensor_eabi(pmc_t *pm)
 
 	if (pm->eabi_RECENT != PM_ENABLED) {
 
-		pm->eabi_bEP = pm->fb_EP;
 		pm->eabi_unwrap = 0;
 		pm->eabi_interp = 0.f;
 
-		if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
+		if (pm->eabi_ADJUST != PM_ENABLED) {
 
-			pm->eabi_lEP = 0;
-		}
-		else if (pm->config_EABI_FRONTEND == PM_EABI_ABSOLUTE) {
-
-			pm->eabi_lEP = pm->fb_EP;
+			pm->eabi_F0[0] = pm->lu_F[0];
+			pm->eabi_F0[1] = pm->lu_F[1];
 		}
 
-		if (pm->config_LU_SENSOR == PM_SENSOR_EABI) {
+		pm->eabi_wS = pm->lu_wS;
 
-			pm->eabi_F[0] = pm->lu_F[0];
-			pm->eabi_F[1] = pm->lu_F[1];
-			pm->eabi_wS = pm->lu_wS;
-		}
-
+		pm->eabi_SPINUP = PM_DISABLED;
 		pm->eabi_RECENT = PM_ENABLED;
 	}
 
-	if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
+	if (likely(pm->fb_EP >= 0)) {
 
-		WRAP = 0x10000;
+		pm->eabi_ERN = 0;
 
-		relEP = pm->fb_EP - pm->eabi_bEP;
-		relEP +=  unlikely(relEP > WRAP / 2 - 1) ? - WRAP
-			: unlikely(relEP < - WRAP / 2) ? WRAP : 0;
+		if (pm->eabi_SPINUP != PM_ENABLED) {
 
-		pm->eabi_bEP = pm->fb_EP;
-	}
-	else if (pm->config_EABI_FRONTEND == PM_EABI_ABSOLUTE) {
+			pm->eabi_bEP = pm->fb_EP;
 
-		WRAP = pm->eabi_const_EP;
+			if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
 
-		pm->eabi_bEP = pm->eabi_lEP - (pm->eabi_lEP / WRAP) * WRAP;
-		pm->eabi_bEP += (pm->eabi_bEP < 0) ? WRAP : 0;
+				pm->eabi_lEP = 0;
+			}
+			else if (pm->config_EABI_FRONTEND == PM_EABI_ABSOLUTE) {
 
-		relEP = pm->fb_EP - pm->eabi_bEP;
-		relEP +=  unlikely(relEP > WRAP / 2 - 1) ? - WRAP
-			: unlikely(relEP < - WRAP / 2) ? WRAP : 0;
+				pm->eabi_lEP = pm->fb_EP;
+			}
+
+			pm->eabi_SPINUP = PM_ENABLED;
+		}
+
+		if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
+
+			WRAP = 0x10000;
+
+			relEP = pm->fb_EP - pm->eabi_bEP;
+			relEP +=  unlikely(relEP > WRAP / 2 - 1) ? - WRAP
+				: unlikely(relEP < - WRAP / 2) ? WRAP : 0;
+
+			pm->eabi_bEP = pm->fb_EP;
+		}
+		else if (pm->config_EABI_FRONTEND == PM_EABI_ABSOLUTE) {
+
+			WRAP = pm->eabi_const_EP;
+
+			pm->eabi_bEP = pm->eabi_lEP - (pm->eabi_lEP / WRAP) * WRAP;
+			pm->eabi_bEP += (pm->eabi_bEP < 0) ? WRAP : 0;
+
+			relEP = pm->fb_EP - pm->eabi_bEP;
+			relEP +=  unlikely(relEP > WRAP / 2 - 1) ? - WRAP
+				: unlikely(relEP < - WRAP / 2) ? WRAP : 0;
+		}
+		else {
+			relEP = 0;
+		}
+
+		if (relEP != 0) {
+
+			pm->eabi_lEP += relEP;
+			pm->eabi_interp += - (float) relEP * pm->lazy_ZiEP;
+
+			WRAP = pm->eabi_const_EP * pm->eabi_const_Zq;
+
+			if (pm->eabi_lEP < - WRAP) {
+
+				pm->eabi_unwrap += - pm->eabi_const_Zq;
+				pm->eabi_lEP += WRAP;
+			}
+			else if (pm->eabi_lEP > WRAP) {
+
+				pm->eabi_unwrap += pm->eabi_const_Zq;
+				pm->eabi_lEP += - WRAP;
+			}
+		}
+
+		/* We get residual when interp goes out of tolerance.
+		 * */
+		rel = (pm->eabi_interp > tol) ? tol - pm->eabi_interp
+			: (pm->eabi_interp < - tol) ? - tol - pm->eabi_interp : 0.f;
+
+		pm->eabi_interp += rel;
+
+		blend = m_fabsf(pm->eabi_wS) * m_fast_recipf(pm->eabi_trip_tol);
+		blend = (blend > 1.f) ? 1.f : blend;
+
+		A =	  pm->eabi_gain_SF * blend
+			+ pm->eabi_gain_LO * (1.f - blend);
+
+		pm->eabi_wS += rel * pm->m_freq * A;
 	}
 	else {
-		relEP = 0;
-	}
+		pm->eabi_ERN++;
 
-	if (relEP != 0) {
+		if (unlikely(pm->eabi_ERN >= 10)) {
 
-		pm->eabi_lEP += relEP;
-		pm->eabi_interp += - (float) relEP * pm->lazy_ZiEP;
-
-		WRAP = pm->eabi_const_EP * pm->eabi_const_Zq;
-
-		if (pm->eabi_lEP < - WRAP) {
-
-			pm->eabi_unwrap += - pm->eabi_const_Zq;
-			pm->eabi_lEP += WRAP;
-		}
-		else if (pm->eabi_lEP > WRAP) {
-
-			pm->eabi_unwrap += pm->eabi_const_Zq;
-			pm->eabi_lEP += - WRAP;
+			pm->fsm_errno = PM_ERROR_SENSOR_EABI_FAULT;
+			pm->fsm_req = PM_STATE_HALT;
 		}
 	}
-
-	/* We get residual when interp goes out of tolerance.
-	 * */
-	rel = (pm->eabi_interp > tol) ? tol - pm->eabi_interp
-		: (pm->eabi_interp < - tol) ? - tol - pm->eabi_interp : 0.f;
-
-	pm->eabi_interp += rel;
-
-	blend = m_fabsf(pm->eabi_wS) * m_fast_recipf(pm->eabi_trip_tol);
-	blend = (blend > 1.f) ? 1.f : blend;
-
-	A =	  pm->eabi_gain_SF * blend
-		+ pm->eabi_gain_LO * (1.f - blend);
-
-	pm->eabi_wS += rel * pm->m_freq * A;
 
 	if (pm->eabi_gain_IF > M_EPSILON) {
 
@@ -1746,7 +1768,8 @@ pm_sensor_eabi(pmc_t *pm)
 		F[0] = m_cosf(ANG);
 		F[1] = m_sinf(ANG);
 
-		if (pm->eabi_ADJUST != PM_ENABLED) {
+		if (		pm->eabi_ADJUST != PM_ENABLED
+				&& pm->eabi_SPINUP == PM_ENABLED) {
 
 			pm->eabi_F0[0] = F[0] * pm->lu_F[0] + F[1] * pm->lu_F[1];
 			pm->eabi_F0[1] = F[0] * pm->lu_F[1] - F[1] * pm->lu_F[0];
@@ -2356,8 +2379,7 @@ pm_lu_FSM(pmc_t *pm)
 
 		if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
 
-			/* We need to adjust the position again
-			 * after loss of tracking.
+			/* Adjust the position again after loss of tracking.
 			 * */
 			pm->eabi_ADJUST = PM_DISABLED;
 		}

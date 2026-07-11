@@ -11,8 +11,6 @@
 /* This is the helper task that reads AS5047 magnetic rotary encoder.
  * */
 
-#define AS5047_FREQUENCY	4000000U	/* (Hz) */
-
 #define AS5047_PARD		0x8000U
 #define AS5047_READ		0x4000U
 #define AS5047_EF		0x4000U
@@ -55,8 +53,8 @@ int AS5047_get_EP()
 {
 	uint16_t	ANGLE;
 
-	if (SPI_dma_busy(HW_SPI_EXT_ID) == HAL_ENABLED)
-		return priv_AS5047.EP;
+	if (SPI_dma_busy(ap.SPI_busnum) == HAL_ENABLED)
+		return (int) -1;
 
 	ANGLE = priv_AS5047.rxbuf[1];
 
@@ -67,17 +65,19 @@ int AS5047_get_EP()
 			priv_AS5047.EP = (int) (ANGLE & AS5047_DATA);
 		}
 		else {
+			priv_AS5047.EP = (int) -1;
 			priv_AS5047.PA_errcnt++;
 		}
 	}
 	else {
+		priv_AS5047.EP = (int) -1;
 		priv_AS5047.EF_errcnt++;
 	}
 
 	priv_AS5047.txbuf[0] = AS5047_PARD | AS5047_READ | AS5047_REG_ANGLECOM;
 	priv_AS5047.txbuf[1] = AS5047_PARD | AS5047_READ | AS5047_REG_NOP;
 
-	SPI_dma_transfer(HW_SPI_EXT_ID, priv_AS5047.txbuf, priv_AS5047.rxbuf, 2);
+	SPI_dma_transfer(ap.SPI_busnum, priv_AS5047.txbuf, priv_AS5047.rxbuf, 2);
 
 	return priv_AS5047.EP;
 }
@@ -86,14 +86,14 @@ AP_TASK_DEF(AS5047)
 {
 	AP_KNOB(knob);
 
-	if (SPI_halted(HW_SPI_EXT_ID) != HAL_OK) {
+	if (SPI_halted(ap.SPI_busnum) != HAL_OK) {
 
 		printf("Unable to start application when SPI is busy" EOL);
 
 		AP_TERMINATE(knob);
 	}
 
-	SPI_startup(HW_SPI_EXT_ID, AS5047_FREQUENCY, SPI_LOW_FALLING | SPI_DMA | SPI_NSS_ON_WORD);
+	SPI_startup(ap.SPI_busnum, ap.SPI_clock, SPI_LOW_FALLING | SPI_DMA | SPI_NSS_ON_WORD);
 
 	vTaskDelay((TickType_t) 1);
 
@@ -102,14 +102,17 @@ AP_TASK_DEF(AS5047)
 	do {
 		vTaskDelay((TickType_t) 1000);
 
+		ap.SPI_errate =   priv_AS5047.EF_errcnt
+				+ priv_AS5047.PA_errcnt;
+
 		if (		   priv_AS5047.EF_errcnt != 0
 				|| priv_AS5047.PA_errcnt != 0) {
 
 			if (		hal.DPS_mode == DPS_DRIVE_ON_SPI
-					&& pm.lu_MODE != PM_LU_DISABLED) {
+					&& pm.eabi_RECENT == PM_ENABLED) {
 
-				if (		   priv_AS5047.EF_errcnt >= 100
-						|| priv_AS5047.PA_errcnt >= 100) {
+				if (		   priv_AS5047.EF_errcnt >= 1000
+						|| priv_AS5047.PA_errcnt >= 1000) {
 
 					pm.fsm_errno = PM_ERROR_SPI_DATA_FAULT;
 					pm.fsm_req = PM_STATE_HALT;
@@ -130,7 +133,7 @@ AP_TASK_DEF(AS5047)
 
 	vTaskDelay((TickType_t) 5);
 
-	SPI_halt(HW_SPI_EXT_ID);
+	SPI_halt(ap.SPI_busnum);
 
 	AP_TERMINATE(knob);
 }

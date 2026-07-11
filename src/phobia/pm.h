@@ -470,7 +470,9 @@ typedef struct {
 	float		hall_gain_SF;
 	float		hall_gain_IF;
 
+	int		eabi_ERN;
 	int		eabi_RECENT;
+	int		eabi_SPINUP;
 	int		eabi_ADJUST;
 	int		eabi_bEP;
 	int		eabi_lEP;

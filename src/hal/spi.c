@@ -6,7 +6,6 @@ typedef struct {
 	SPI_TypeDef	*SPI;
 
 	int		gpio_NSS;
-
 	int		clock;
 	int		hold;
 	int		mode;
@@ -315,6 +314,10 @@ void SPI_startup(int bus, int freq, int mode)
 	/* Enable SPI.
 	 * */
 	priv_SPI[bus].SPI->CR1 |= SPI_CR1_SPE;
+
+	/*
+	log_TRACE("SPI [%i] clock %i" EOL, bus, priv_SPI[bus].clock);
+	*/
 }
 
 void SPI_halt(int bus)

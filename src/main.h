@@ -108,6 +108,12 @@ typedef struct {
 	 * */
 	int			load_HX711;
 
+	/* SPI application data.
+	 * */
+	int			SPI_busnum;
+	int			SPI_clock;
+	int			SPI_errate;
+
 	/* SPI absolute encoder (e.g. AS5047).
 	 * */
 	int 			(* proc_get_EP) ();

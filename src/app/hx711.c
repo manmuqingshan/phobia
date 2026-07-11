@@ -22,14 +22,14 @@ AP_TASK_DEF(HX711)
 
 	int			DOUT, ADC, N;
 
-	if (SPI_halted(HW_SPI_EXT_ID) != HAL_OK) {
+	if (SPI_halted(ap.SPI_busnum) != HAL_OK) {
 
 		printf("Unable to start application when SPI is busy" EOL);
 
 		AP_TERMINATE(knob);
 	}
 
-	SPI_startup(HW_SPI_EXT_ID, 0, 0);
+	SPI_startup(ap.SPI_busnum, 0, 0);
 
 	GPIO_set_mode_INPUT(gpio_DOUT);
 	GPIO_set_mode_OUTPUT(gpio_PD_SCK);
@@ -80,7 +80,7 @@ AP_TASK_DEF(HX711)
 				TIM_wait_ns(550);
 			}
 
-			/* Store the ADC code in a register.
+			/* Store the ADC code in HX711 register.
 			 * */
 			ap.load_HX711 = ADC;
 		}
@@ -90,7 +90,7 @@ AP_TASK_DEF(HX711)
 	GPIO_set_mode_INPUT(gpio_DOUT);
 	GPIO_set_mode_INPUT(gpio_PD_SCK);
 
-	SPI_halt(HW_SPI_EXT_ID);
+	SPI_halt(ap.SPI_busnum);
 
 	AP_TERMINATE(knob);
 }

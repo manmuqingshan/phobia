@@ -480,7 +480,7 @@ link_fetch_gettime(struct link_pmc *lp)
 	char			*sp = priv->lbuf;
 	int			time;
 
-	if (strcmp(lk_token(&sp), "TIME") == 0) {
+	if (strcmp(lk_token(&sp), "Time") == 0) {
 
 		lk_token(&sp);
 
@@ -747,7 +747,7 @@ int link_fetch(struct link_pmc *lp, int clock)
 
 		{ "ap_version",		LINK_MODE_HWINFO },
 		{ "ap_gettime",		LINK_MODE_GETTIME },
-		{ "ap_log_flush",	LINK_MODE_DATA_GRAB },
+		{ "ap_log_flush",	LINK_MODE_COMMAND },
 		{ "ap_reboot",		LINK_MODE_COMMAND },
 		{ "ap_bootload",	LINK_MODE_COMMAND },
 		{ "flash_info",		LINK_MODE_FLASH_MAP },
@@ -1032,7 +1032,8 @@ void link_push(struct link_pmc *lp)
 			}
 		}
 		else {
-			if (reg->queued + 1000 < lp->clock) {
+			if (		reg->queued != 0
+					&& reg->queued + 1000 < lp->clock) {
 
 				reg->queued = 0;
 

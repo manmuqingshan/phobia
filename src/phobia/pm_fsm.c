@@ -1955,7 +1955,9 @@ pm_fsm_state_lu_startup(pmc_t *pm, int in_ZONE)
 				pm->hall_F[1] = 0.f;
 				pm->hall_wS = 0.f;
 
+				pm->eabi_ERN = 0;
 				pm->eabi_RECENT = PM_DISABLED;
+				pm->eabi_SPINUP = PM_DISABLED;
 
 				if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
 
@@ -2421,6 +2423,22 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 	switch (pm->fsm_phase) {
 
 		case 0:
+			if (likely(pm->fb_EP >= 0)) {
+
+				pm->eabi_ERN = 0;
+			}
+			else {
+				pm->eabi_ERN++;
+
+				if (unlikely(pm->eabi_ERN >= 10)) {
+
+					pm->fsm_errno = PM_ERROR_SENSOR_EABI_FAULT;
+					pm->fsm_state = PM_STATE_HALT;
+					pm->fsm_phase = 0;
+				}
+				break;
+			}
+
 			pm->eabi_bEP = pm->fb_EP;
 			pm->eabi_lEP = 0;
 
@@ -2435,6 +2453,24 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 			break;
 
 		case 1:
+			pm->tm_value++;
+
+			if (likely(pm->fb_EP >= 0)) {
+
+				pm->eabi_ERN = 0;
+			}
+			else {
+				pm->eabi_ERN++;
+
+				if (unlikely(pm->eabi_ERN >= 10)) {
+
+					pm->fsm_errno = PM_ERROR_SENSOR_EABI_FAULT;
+					pm->fsm_state = PM_STATE_HALT;
+					pm->fsm_phase = 0;
+				}
+				break;
+			}
+
 			range_bEP[0] = (pm->fb_EP < range_bEP[0])
 				? pm->fb_EP : range_bEP[0];
 
@@ -2445,8 +2481,6 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 
 			pm->eabi_lEP += (relEP < 0) ? - 1 : (relEP > 0) ? 1 : 0;
 			pm->eabi_bEP = pm->fb_EP;
-
-			pm->tm_value++;
 
 			if (pm->tm_value >= pm->tm_end) {
 
@@ -2499,6 +2533,24 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 			break;
 
 		case 2:
+			pm->tm_value++;
+
+			if (likely(pm->fb_EP >= 0)) {
+
+				pm->eabi_ERN = 0;
+			}
+			else {
+				pm->eabi_ERN++;
+
+				if (unlikely(pm->eabi_ERN >= 10)) {
+
+					pm->fsm_errno = PM_ERROR_SENSOR_EABI_FAULT;
+					pm->fsm_state = PM_STATE_HALT;
+					pm->fsm_phase = 0;
+				}
+				break;
+			}
+
 			if (pm->config_EABI_FRONTEND == PM_EABI_INCREMENTAL) {
 
 				WRAP = 0x10000;
@@ -2530,8 +2582,6 @@ pm_fsm_state_adjust_sensor_eabi(pmc_t *pm)
 				+ (float) pm->lu_revol * M_2_PI_F;
 
 			lse_insert(ls, v);
-
-			pm->tm_value++;
 
 			if (pm->tm_value >= pm->tm_end) {
 
@@ -2657,7 +2707,7 @@ pm_fsm_state_adjust_sensor_sincos(pmc_t *pm)
 			break;
 
 		case 2:
-			lse_ridge(ls, 1.e-3);
+			lse_ridge(ls, 1.e-3f);
 			lse_solve(ls);
 
 			if (		   m_isfinitef(ls->sol.m[0]) != 0

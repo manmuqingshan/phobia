@@ -60,8 +60,8 @@ deliberately invalid operation was requested that could result in NaN.
 `PM_ERROR_SENSOR_HALL_FAULT` - Forbidden value of Hall code was detected or
 result of Hall self-adjustment shows an inadequacy of sensor measurements.
 
-`PM_ERROR_SENSOR_EABI_FAULT` - Result of EABI self-adjustment shows an
-inadequacy of sensor measurements.
+`PM_ERROR_SENSOR_EABI_FAULT` - No valid pulse signal occurs frequently or
+result of EABI self-adjustment shows an inadequacy of sensor measurements.
 
 ## Application level
 
