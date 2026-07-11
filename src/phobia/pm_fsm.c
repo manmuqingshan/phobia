@@ -301,32 +301,32 @@ pm_fsm_state_self_test_power_stage(pmc_t *pm)
 					break;
 
 				case 1:
-					pm->proc_set_DC(pm->dc_resolution, 0, 0);
+					pm->proc_set_DC(0, 0, 0);
 					pm->proc_set_Z(PM_Z_BC);
 					break;
 
 				case 2:
-					pm->proc_set_DC(0, 0, 0);
+					pm->proc_set_DC(pm->dc_resolution, 0, 0);
 					pm->proc_set_Z(PM_Z_BC);
 					break;
 
 				case 3:
-					pm->proc_set_DC(0, pm->dc_resolution, 0);
+					pm->proc_set_DC(0, 0, 0);
 					pm->proc_set_Z(PM_Z_AC);
 					break;
 
 				case 4:
-					pm->proc_set_DC(0, 0, 0);
+					pm->proc_set_DC(0, pm->dc_resolution, 0);
 					pm->proc_set_Z(PM_Z_AC);
 					break;
 
 				case 5:
-					pm->proc_set_DC(0, 0, pm->dc_resolution);
+					pm->proc_set_DC(0, 0, 0);
 					pm->proc_set_Z(PM_Z_AB);
 					break;
 
 				case 6:
-					pm->proc_set_DC(0, 0, 0);
+					pm->proc_set_DC(0, 0, pm->dc_resolution);
 					pm->proc_set_Z(PM_Z_AB);
 					break;
 			}
@@ -397,21 +397,21 @@ pm_fsm_state_self_test_power_stage(pmc_t *pm)
 			break;
 
 		case 5:
-			if (		   pm->self_IST[1] == 7U
-					&& pm->self_IST[2] == 0U
-					&& pm->self_IST[3] == 7U
-					&& pm->self_IST[4] == 0U
-					&& pm->self_IST[5] == 7U
-					&& pm->self_IST[6] == 0U) {
+			if (		   pm->self_IST[1] == 0U
+					&& pm->self_IST[2] == 7U
+					&& pm->self_IST[3] == 0U
+					&& pm->self_IST[4] == 7U
+					&& pm->self_IST[5] == 0U
+					&& pm->self_IST[6] == 7U) {
 
 				pm->fsm_errno = PM_OK;
 			}
-			else if (	   (pm->self_IST[1] & 0x11U) == 1U
-					&& (pm->self_IST[2] & 0x11U) == 0U
-					&& (pm->self_IST[3] & 0x22U) == 2U
-					&& (pm->self_IST[4] & 0x22U) == 0U
-					&& (pm->self_IST[5] & 0x44U) == 4U
-					&& (pm->self_IST[6] & 0x44U) == 0U) {
+			else if (	   (pm->self_IST[1] & 0x11U) == 0U
+					&& (pm->self_IST[2] & 0x11U) == 1U
+					&& (pm->self_IST[3] & 0x22U) == 0U
+					&& (pm->self_IST[4] & 0x22U) == 2U
+					&& (pm->self_IST[5] & 0x44U) == 0U
+					&& (pm->self_IST[6] & 0x44U) == 4U) {
 
 				pm->fsm_errno = PM_ERROR_NO_MOTOR_CONNECTED;
 			}
