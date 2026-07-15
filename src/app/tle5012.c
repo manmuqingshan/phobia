@@ -39,16 +39,16 @@ priv_TLE5012_t;
 static priv_TLE5012_t		priv_TLE5012;
 
 static uint8_t
-TLE5012_crc8_j1850_be(const uint16_t *text, int len)
+TLE5012_crc8_j1850_be(const uint16_t *ip, size_t len)
 {
-	const uint16_t		*end = text + len;
+	const uint16_t		*ipend = ip + len;
 	uint32_t		crcsum = 0xFF00U;
 
 	int			n;
 
-	while (text < end) {
+	while (ip < ipend) {
 
-		crcsum = crcsum ^ * (text++);
+		crcsum = crcsum ^ * (ip++);
 
 		for (n = 0; n < 16; ++n) {
 

@@ -2740,6 +2740,52 @@ SH_DEF(reg)
 	}
 }
 
+SH_DEF(safe_reg)
+{
+	rval_t			rval;
+	const reg_t		*reg;
+
+	int			crc8;
+
+	reg = reg_search_fuzzy(s);
+
+	if (reg != NULL) {
+
+		s = sh_next_arg(s);
+
+		if (		htoi(&crc8, sh_next_arg(s)) != NULL
+				&& crc8u(s, strlen(s)) == (uint8_t) crc8) {
+
+			if (reg->fmt[2] == 'i') {
+
+				if (reg->mode & REG_LINKED) {
+
+					/* Not used */
+				}
+				else if (stoi(&rval.i, s) != NULL) {
+
+					reg_setval(reg, &rval);
+				}
+			}
+			else if (reg->fmt[2] == 'x') {
+
+				if (htoi(&rval.i, s) != NULL) {
+
+					reg_setval(reg, &rval);
+				}
+			}
+			else {
+				if (stof(&rval.f, s) != NULL) {
+
+					reg_setval(reg, &rval);
+				}
+			}
+		}
+
+		reg_format(reg);
+	}
+}
+
 SH_DEF(enum_reg)
 {
 	rval_t			rval;

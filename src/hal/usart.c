@@ -199,7 +199,15 @@ int USART_getc()
 
 int USART_poll()
 {
-	return (int) uxQueueMessagesWaiting(priv_USART.rx_queue);
+	char		xbyte;
+
+	if (xQueueReceive(priv_USART.rx_queue, &xbyte, (TickType_t) 0) == pdTRUE) {
+
+		return (int) xbyte;
+	}
+	else {
+		return (int) -1;
+	}
 }
 
 void USART_putc(int c)

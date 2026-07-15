@@ -252,8 +252,7 @@ SH_DEF(tlm_flush_sync)
 
 		clock += 1;
 
-		if (		   poll() != 0
-				&& getc() != K_LF)
+		if (poll() == K_CR)
 			break;
 	}
 	while (line != tlm.line);
@@ -308,8 +307,7 @@ SH_DEF(tlm_stream_sync)
 			hal_memory_fence();
 		}
 
-		if (		   poll() != 0
-				&& getc() != K_LF)
+		if (poll() == K_CR)
 			break;
 	}
 	while (1);

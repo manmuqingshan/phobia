@@ -48,6 +48,7 @@ struct link_reg {
 	int		fetched;
 	int		queued;
 	int		enumerated;
+	int		safed;
 
 	char		sym[LINK_NAME_MAX];
 	char		val[LINK_NAME_MAX];

@@ -71,6 +71,7 @@ const char *stoi(int *x, const char *s);
 const char *htoi(int *x, const char *s);
 const char *stof(float *x, const char *s);
 
+uint8_t crc8u(const void *raw, size_t len);
 uint32_t crc32u(const void *raw, size_t len);
 uint32_t urand();
 

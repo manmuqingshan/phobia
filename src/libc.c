@@ -876,6 +876,27 @@ const char *stof(float *x, const char *s)
 	return s;
 }
 
+uint8_t crc8u(const void *raw, size_t len)
+{
+	const uint8_t		*ip = (const uint8_t *) raw;
+	const uint8_t		*ipend = ip + len;
+
+	uint32_t		crcsum = 0U;
+	int			n;
+
+	while (ip < ipend) {
+
+		crcsum = crcsum ^ (uint32_t) * (ip++);
+
+		for (n = 0; n < 8; ++n) {
+
+			crcsum = (crcsum & 0x80U) ? (crcsum << 1) ^ 0x07U : crcsum << 1;
+		}
+	}
+
+	return (uint8_t) crcsum;
+}
+
 uint32_t crc32u(const void *raw, size_t len)
 {
 	const uint8_t		*ip = (const uint8_t *) raw;

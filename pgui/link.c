@@ -236,6 +236,28 @@ lk_hash(const char *sym)
 	return hash;
 }
 
+uint8_t
+lk_crc8u(const void *raw, size_t len)
+{
+	const uint8_t		*ip = (const uint8_t *) raw;
+	const uint8_t		*ipend = ip + len;
+
+	uint32_t		crcsum = 0U;
+	int			n;
+
+	while (ip < ipend) {
+
+		crcsum = crcsum ^ (uint32_t) * (ip++);
+
+		for (n = 0; n < 8; ++n) {
+
+			crcsum = (crcsum & 0x80U) ? (crcsum << 1) ^ 0x07U : crcsum << 1;
+		}
+	}
+
+	return (uint8_t) crcsum;
+}
+
 static char *
 link_mballoc(struct link_pmc *lp, int len)
 {
@@ -990,8 +1012,15 @@ void link_push(struct link_pmc *lp)
 
 			if (reg->modified > reg->fetched) {
 
-				sprintf(priv->lbuf, "reg %i %.79s" LINK_EOL,
-						reg_ID, reg->val);
+				if (reg->safed != 0) {
+
+					sprintf(priv->lbuf, "safe_reg %i %.79s %02X" LINK_EOL,
+							reg_ID, reg->val, lk_crc8u(reg->val, strlen(reg->val)));
+				}
+				else {
+					sprintf(priv->lbuf, "reg %i %.79s" LINK_EOL,
+							reg_ID, reg->val);
+				}
 
 				if (serial_fputs(priv->fd, priv->lbuf) == SERIAL_OK) {
 

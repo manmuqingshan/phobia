@@ -2233,6 +2233,11 @@ reg_float_um(struct public *pub, const char *sym, const char *name, int range, i
 			rc = nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD
 				| NK_EDIT_SIG_ENTER, reg->val, 79, nk_filter_default);
 
+			if (rc & NK_EDIT_ACTIVE) {
+
+				reg->update = 0;
+			}
+
 			if (rc & (NK_EDIT_DEACTIVATED | NK_EDIT_COMMITED)) {
 
 				reg->modified = lp->clock;
@@ -2554,6 +2559,11 @@ reg_float_prog_um(struct public *pub, const char *sym, const char *name,
 
 			rc = nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD
 				| NK_EDIT_SIG_ENTER, reg->val, 79, nk_filter_default);
+
+			if (rc & NK_EDIT_ACTIVE) {
+
+				reg->update = 0;
+			}
 
 			if (rc & (NK_EDIT_DEACTIVATED | NK_EDIT_COMMITED)) {
 
@@ -3509,17 +3519,20 @@ page_probe(struct public *pub)
 			if (config_LU_DRIVE == LU_DRIVE_CURRENT) {
 
 				reg = link_reg_lookup(lp, "pm.i_setpoint_current");
-				if (reg != NULL) { reg += reg->um_sel; reg->onefetch = 1; }
+				if (reg != NULL) { reg += reg->um_sel;
+					reg->onefetch = 1; reg->safed = 1; }
 			}
 			else if (config_LU_DRIVE == LU_DRIVE_TORQUE) {
 
 				reg = link_reg_lookup(lp, "pm.i_setpoint_torque");
-				if (reg != NULL) { reg += reg->um_sel; reg->onefetch = 1; }
+				if (reg != NULL) { reg += reg->um_sel;
+					reg->onefetch = 1; reg->safed = 1; }
 			}
 			else if (config_LU_DRIVE == LU_DRIVE_SPEED) {
 
 				reg = link_reg_lookup(lp, "pm.s_setpoint_speed");
-				if (reg != NULL) { reg += reg->um_sel; reg->onefetch = 1; }
+				if (reg != NULL) { reg += reg->um_sel;
+					reg->onefetch = 1; reg->safed = 1; }
 			}
 		}
 	}
@@ -3548,11 +3561,12 @@ page_probe(struct public *pub)
 
 		if (reg != NULL) {
 
-			int		rate;
+			int		rate, slow;
 
 			reg->update = 1000;
 
 			rate = (reg->lval != 0) ? 100 : 0;
+			slow = (reg->lval != 0) ? 400 : 0;
 
 			reg = link_reg_lookup(lp, "pm.lu_iD");
 			if (reg != NULL) { reg->update = rate; }
@@ -3565,6 +3579,18 @@ page_probe(struct public *pub)
 
 			reg = link_reg_lookup(lp, "pm.lu_mq_load");
 			if (reg != NULL) { reg->update = rate; }
+
+			reg = link_reg_lookup(lp, "pm.i_setpoint_current");
+			if (reg != NULL) { reg += reg->um_sel;
+				reg->update = slow; reg->safed = 1; }
+
+			reg = link_reg_lookup(lp, "pm.i_setpoint_torque");
+			if (reg != NULL) { reg += reg->um_sel;
+				reg->update = slow; reg->safed = 1; }
+
+			reg = link_reg_lookup(lp, "pm.s_setpoint_speed");
+			if (reg != NULL) { reg += reg->um_sel;
+				reg->update = slow; reg->safed = 1; }
 		}
 
 		reg_float(pub, "pm.lu_iD", "LU current D");
@@ -6078,10 +6104,12 @@ page_lp_location(struct public *pub)
 			if (reg != NULL) { reg->onefetch = 1; }
 
 			reg = link_reg_lookup(lp, "pm.x_setpoint_location");
-			if (reg != NULL) { reg += reg->um_sel; reg->onefetch = 1; }
+			if (reg != NULL) { reg += reg->um_sel;
+				reg->onefetch = 1; reg->safed = 1; }
 
 			reg = link_reg_lookup(lp, "pm.x_setpoint_speed");
-			if (reg != NULL) { reg += reg->um_sel; reg->onefetch = 1; }
+			if (reg != NULL) { reg += reg->um_sel;
+				reg->onefetch = 1; reg->safed = 1; }
 		}
 	}
 
@@ -6126,7 +6154,12 @@ page_lp_location(struct public *pub)
 		if (reg != NULL) { reg->update = rate; }
 
 		reg = link_reg_lookup(lp, "pm.x_setpoint_location");
-		if (reg != NULL) { reg += reg->um_sel; reg->update = rate; }
+		if (reg != NULL) { reg += reg->um_sel;
+			reg->update = rate; reg->safed = 1; }
+
+		reg = link_reg_lookup(lp, "pm.x_setpoint_speed");
+		if (reg != NULL) { reg += reg->um_sel;
+			reg->update = rate; reg->safed = 1; }
 	}
 
 	reg_enum_errno(pub, "pm.lu_MODE", "LU operation mode", 0);
